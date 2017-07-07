@@ -880,7 +880,15 @@ bool Ekf::rangeAidConditionsMet(bool in_range_aid_mode)
 			use_range_finder = false;
 		}
 
-		use_range_finder &= ((_hagl_innov * _hagl_innov / (sq(_params.range_aid_innov_gate) * _hagl_innov_var)) < 1.0f);
+		// use hysteresis to check for hagl
+		if (in_range_aid_mode) {
+			use_range_finder &= ((_hagl_innov * _hagl_innov / (_hagl_innov_var)) < sq(_params.range_aid_innov_gate));
+
+		} else {
+			// if we were not using range aid in the previous iteration then use a lower threshold to avoid
+			// switching to range finder too soon (wait for terrain to update).
+			use_range_finder &= ((_hagl_innov * _hagl_innov / (_hagl_innov_var)) < sq(0.5f * _params.range_aid_innov_gate));
+		}
 
 		return use_range_finder;
 
